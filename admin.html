@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>সিক্রেট এডমিন কন্ট্রোল প্যানেল</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0f172a; color: #fff; margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .box { width: 100%; max-width: 400px; background: #1e293b; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); box-sizing: border-box; }
+        h3, h2 { color: #38bdf8; text-align: center; margin-top: 0; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #0f172a; border: 1px solid #475569; color: #fff; border-radius: 5px; box-sizing: border-box; font-size: 15px; }
+        button { background: #2563eb; color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 15px; }
+        button:hover { background: #1d4ed8; }
+        .hidden { display: none; }
+        .section { background: #334155; padding: 15px; margin-top: 15px; border-radius: 8px; }
+        .req-card { background: #1e293b; padding: 10px; margin-top: 8px; border-radius: 5px; border-left: 4px solid #f59e0b; }
+        .logout-btn { background: #dc2626; margin-top: 20px; }
+        .logout-btn:hover { background: #b91c1c; }
+    </style>
+</head>
+<body>
+
+    <!-- এডমিন সিক্রেট লগইন বক্স -->
+    <div id="loginBox" class="box">
+        <h3>🔐 সিক্রেট এডমিন লগইন</h3>
+        <p style="font-size: 12px; color: #94a3b8; text-align: center;">অনুমোদিত ব্যক্তি ছাড়া প্রবেশ নিষেধ!</p>
+        
+        <input type="text" id="adminUser" placeholder="ইউজারনেম লিখুন">
+        <input type="password" id="adminPass" placeholder="পাসওয়ার্ড লিখুন">
+        <button onclick="loginAdmin()">প্রবেশ করুন</button>
+        <p id="errorMsg" style="color: #ef4444; font-size: 13px; text-align: center; margin-top: 10px;"></p>
+    </div>
+
+    <!-- মূল এডমিন ড্যাশবোর্ড -->
+    <div id="adminDashboard" class="box hidden" style="max-width: 450px; height: auto;">
+        <h2>👑 বস ফারহান - এডমিন প্যানেল</h2>
+        
+        <!-- ১. পেমেন্ট নাম্বার সেটআপ -->
+        <div class="section">
+            <h3 style="font-size: 16px; margin-bottom: 10px;">ডিপোজিট নাম্বার সেট করুন</h3>
+            <select id="payMethod">
+                <option value="বিকাশ">বিকাশ</option>
+                <option value="নগদ">নগদ</option>
+                <option value="রকেট">রকেট</option>
+            </select>
+            <input type="text" id="agentNum" placeholder="এজেন্ট/পার্সোনাল নাম্বার">
+            <button onclick="saveNumber()" style="background: #16a34a;">নাম্বার আপডেট করুন</button>
+            <p id="saveMsg" style="color: #22c55e; font-size: 12px; text-align: center; margin-top: 5px;"></p>
+        </div>
+
+        <!-- ২. ইউজারের ডিপোজিট রিকোয়েস্ট লিস্ট -->
+        <div class="section">
+            <h3 style="font-size: 16px; margin-bottom: 10px;">ইউজার ডিপোজিট রিকোয়েস্ট</h3>
+            <div id="requestList">
+                <p style="font-size: 13px; color: #94a3b8; text-align: center;">কোনো নতুন রিকোয়েস্ট নেই।</p>
+            </div>
+        </div>
+
+        <button class="logout-btn" onclick="logoutAdmin()">লগআউট করুন</button>
+    </div>
+
+    <script>
+        const ADMIN_U = "Chowdhury farhan999";
+        const ADMIN_P = "7890090";
+
+        window.onload = function() {
+            if (sessionStorage.getItem("isAdminLoggedIn") === "true") {
+                showDashboard();
+            }
+        };
+
+        function loginAdmin() {
+            let u = document.getElementById("adminUser").value;
+            let p = document.getElementById("adminPass").value;
+            let errorMsg = document.getElementById("errorMsg");
+
+            if(u === ADMIN_U && p === ADMIN_P) {
+                sessionStorage.setItem("isAdminLoggedIn", "true");
+                showDashboard();
+            } else {
+                errorMsg.innerText = "❌ ভুল ইউজারনেম বা পাসওয়ার্ড!";
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById("loginBox").classList.add("hidden");
+            document.getElementById("adminDashboard").classList.remove("hidden");
+            loadRequests();
+        }
+
+        function saveNumber() {
+            let method = document.getElementById("payMethod").value;
+            let num = document.getElementById("agentNum").value;
+            if(num === "") { alert("দয়া করে নাম্বার লিখুন!"); return; }
+
+            localStorage.setItem("activeMethod", method);
+            localStorage.setItem("activeNumber", num);
+            document.getElementById("saveMsg").innerText = "সফলভাবে নাম্বার সেভ হয়েছে!";
+            setTimeout(() => { document.getElementById("saveMsg").innerText = ""; }, 3000);
+        }
+
+        function loadRequests() {
+            let container = document.getElementById("requestList");
+            let requests = JSON.parse(localStorage.getItem("depositList")) || [];
+
+            if(requests.length === 0) {
+                container.innerHTML = "<p style='font-size: 13px; color: #94a3b8; text-align: center;'>কোনো নতুন রিকোয়েস্ট নেই।</p>";
+                return;
+            }
+
+            container.innerHTML = "";
+            requests.forEach((req, index) => {
+                container.innerHTML += `
+                    <div class="req-card">
+                        <p style="margin:2px 0; font-size: 14px;"><b>ইউজার:</b> ${req.user}</p>
+                        <p style="margin:2px 0; font-size: 14px;"><b>টাকা:</b> ${req.amount}৳ | <b>TrxID:</b> ${req.trx}</p>
+                        <button onclick="approveReq(${index}, ${req.amount})" style="background: #16a34a; padding: 6px; font-size: 13px; margin-top: 6px; width: auto;">এপ্রুভ করুন</button>
+                    </div>
+                `;
+            });
+        }
+
+        function approveReq(index, amount) {
+            let currentBal = parseInt(localStorage.getItem("myBalance")) || 0;
+            currentBal += parseInt(amount);
+            localStorage.setItem("myBalance", currentBal);
+
+            let requests = JSON.parse(localStorage.getItem("depositList")) || [];
+            requests.splice(index, 1);
+            localStorage.setItem("depositList", JSON.stringify(requests));
+
+            alert("সফলভাবে ডিপোজিট এপ্রুভ করা হয়েছে!");
+            loadRequests();
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem("isAdminLoggedIn");
+            location.reload();
+        }
+    </script>
+
+</body>
+</html>
